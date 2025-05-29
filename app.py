@@ -1,32 +1,56 @@
 from flask import Flask, request, jsonify
-import requests
+import os
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
-# Exemple : mots-clés chinois par niche
+# Simulation de vidéos pour test (à remplacer par un vrai scraper)
+SIMULATED_VIDEOS = {
+    "美食": [
+        {
+            "title": "Recette incroyable de nouilles",
+            "likes": 15400,
+            "upload_time": datetime.now().timestamp(),  # aujourd'hui
+            "video_url": "https://example.com/video1.mp4",
+            "thumbnail_url": "https://example.com/thumb1.jpg"
+        },
+        {
+            "title": "Gâteau en 5 minutes",
+            "likes": 9800,
+            "upload_time": (datetime.now() - timedelta(hours=2)).timestamp(),
+            "video_url": "https://example.com/video2.mp4",
+            "thumbnail_url": "https://example.com/thumb2.jpg"
+        }
+    ]
+}
+
+# Mots-clés chinois par niche
 NICHES = {
-    "cuisine": ["美食", "厨房", "烹饪"]
+    "cuisine": ["美食"]
 }
 
 @app.route("/scrape", methods=["GET"])
 def scrape():
     niche = request.args.get("niche", "cuisine")
     keywords = NICHES.get(niche, [])
-
+    
     results = []
     for kw in keywords:
-        # Simule un scraping (à remplacer par vrai scraper Douyin)
-        response = requests.get(f"https://douyin-api-proxy.com/search?kw={kw}")
-        for item in response.json().get("videos", []):
-            upload_time = datetime.fromtimestamp(item["upload_time"])
+        videos = SIMULATED_VIDEOS.get(kw, [])
+        for video in videos:
+            upload_time = datetime.fromtimestamp(video["upload_time"])
             if upload_time > datetime.now() - timedelta(hours=24):
                 results.append({
-                    "title": item["title"],
-                    "likes": item["likes"],
+                    "title": video["title"],
+                    "likes": video["likes"],
                     "upload_time": upload_time.isoformat(),
-                    "video_url": item["video_url"],
-                    "thumbnail_url": item["thumbnail"]
+                    "video_url": video["video_url"],
+                    "thumbnail_url": video["thumbnail_url"]
                 })
 
     return jsonify(results)
+
+# OBLIGATOIRE POUR RENDER
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
